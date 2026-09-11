@@ -1,0 +1,1 @@
+web: cd backend && python manage.py migrate --noinput && python manage.py ensure_initial_users && python manage.py collectstatic --noinput && gunicorn metravox_core.wsgi:application --bind 0.0.0.0:$PORT
