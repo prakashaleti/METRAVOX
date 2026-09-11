@@ -23,12 +23,51 @@ import { useApp } from '../context/AppContext';
 
 export default function Sidebar({ isOpen, onClose }) {
   const { currentRole, user } = useAuth();
-  const { certificateExpirySummary, applications } = useApp();
+  const { certificateExpirySummary, applications = [], certificates = [] } = useApp();
+
+  const scopedApps = React.useMemo(() => {
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return [];
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      return applications.filter((a) => {
+        const emailMatch = userClean && a.applicantEmail && a.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && a.applicantName && a.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && a.applicantUid && String(a.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+    }
+    return applications;
+  }, [applications, currentRole, user]);
+
+  const activeAlertCount = React.useMemo(() => {
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return 0;
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      const userCerts = (certificates || []).filter((c) => {
+        const emailMatch = userClean && c.applicantEmail && c.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && c.applicantName && c.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && c.applicantUid && String(c.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+
+      return userCerts.filter(c => {
+        const remaining = (new Date(c.expiryDate) - new Date()) / (1000 * 60 * 60 * 24);
+        return remaining <= 30;
+      }).length;
+    }
+    return certificateExpirySummary.totalActionRequired;
+  }, [certificates, currentRole, user, certificateExpirySummary]);
 
   const pendingReviewCount = applications.filter(a => a.status === 'Application Submitted' || a.status === 'Under Review').length;
-  const returnedCount = applications.filter(a => a.status === 'Returned for Correction').length;
+  const returnedCount = scopedApps.filter(a => a.status === 'Returned for Correction').length;
   const scheduledCount = applications.filter(a => a.status === 'Verification Scheduled').length;
-  const alertCount = certificateExpirySummary.totalActionRequired;
+  const alertCount = activeAlertCount;
 
   const consumerLinks = [
     { to: '/consumer/dashboard', label: 'Dashboard', icon: LayoutDashboard },

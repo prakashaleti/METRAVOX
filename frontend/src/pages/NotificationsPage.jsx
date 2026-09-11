@@ -14,14 +14,67 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+import { useAuth, ROLES } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { getRemainingDays } from '../services/storage';
+import { getRemainingDays, getExpiryAlertInfo } from '../services/storage';
 
 export default function NotificationsPage() {
-  const { certificateExpirySummary, applications } = useApp();
+  const { currentRole, user } = useAuth();
+  const { certificateExpirySummary, applications = [], certificates = [] } = useApp();
   const [activeTab, setActiveTab] = useState('all');
 
-  const { urgent, warning, reminder, expired } = certificateExpirySummary;
+  // Role-aware scoped applications and certificates
+  const scopedApps = React.useMemo(() => {
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return [];
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      return applications.filter((a) => {
+        const emailMatch = userClean && a.applicantEmail && a.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && a.applicantName && a.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && a.applicantUid && String(a.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+    }
+    return applications;
+  }, [applications, currentRole, user]);
+
+  const activeExpirySummary = React.useMemo(() => {
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return { urgent: [], warning: [], reminder: [], expired: [], valid: [], totalActionRequired: 0 };
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      const userCerts = certificates.filter((c) => {
+        const emailMatch = userClean && c.applicantEmail && c.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && c.applicantName && c.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && c.applicantUid && String(c.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+
+      const urgent = [], warning = [], reminder = [], expired = [], valid = [];
+      userCerts.forEach((cert) => {
+        const info = getExpiryAlertInfo(cert.expiryDate);
+        const enriched = { ...cert, expiryInfo: info };
+        if (info.severity === 'expired') expired.push(enriched);
+        else if (info.severity === 'urgent') urgent.push(enriched);
+        else if (info.severity === 'warning') warning.push(enriched);
+        else if (info.severity === 'reminder') reminder.push(enriched);
+        else valid.push(enriched);
+      });
+      return {
+        urgent, warning, reminder, expired, valid,
+        totalActionRequired: urgent.length + warning.length + expired.length,
+        allExpiringSoon: [...expired, ...urgent, ...warning, ...reminder]
+      };
+    }
+    return certificateExpirySummary;
+  }, [certificates, currentRole, user, certificateExpirySummary]);
+
+  const { urgent, warning, reminder, expired } = activeExpirySummary;
 
   // Build notifications feed
   const expiryNotifications = [
@@ -88,7 +141,7 @@ export default function NotificationsPage() {
   ];
 
   // Also include status-change notifications from applications
-  const returnedApps = applications.filter(a => a.status === 'Returned for Correction').map(a => ({
+  const returnedApps = scopedApps.filter(a => a.status === 'Returned for Correction').map(a => ({
     id: `ret-${a.id}`,
     type: 'returned',
     severity: 'Correction Request',

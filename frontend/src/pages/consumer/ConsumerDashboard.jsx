@@ -23,15 +23,56 @@ import { getRemainingDays } from '../../services/storage';
 
 export default function ConsumerDashboard() {
   const { user } = useAuth();
-  const { applications, certificates, certificateExpirySummary } = useApp();
+  const { applications, certificates } = useApp();
 
-  const myApplications = applications;
-  const myCertificates = certificates;
+  const myApplications = React.useMemo(() => {
+    if (!user?.email) return [];
+    const userEmail = (user.email || '').trim().toLowerCase();
+    const userId = user.id || '';
+    return applications.filter((a) => {
+      const emailMatch = a.applicantEmail && a.applicantEmail.trim().toLowerCase() === userEmail;
+      const uidMatch = a.applicantUid && userId && a.applicantUid === userId;
+      return emailMatch || uidMatch;
+    });
+  }, [applications, user]);
+
+  const myCertificates = React.useMemo(() => {
+    if (!user?.email) return [];
+    const userEmail = (user.email || '').trim().toLowerCase();
+    const userId = user.id || '';
+    return certificates.filter((c) => {
+      const emailMatch = c.applicantEmail && c.applicantEmail.trim().toLowerCase() === userEmail;
+      const uidMatch = c.applicantUid && userId && c.applicantUid === userId;
+      const appMatch = myApplications.some(a => a.id === c.applicationId || a.certificateId === c.certificateNumber);
+      return emailMatch || uidMatch || appMatch;
+    });
+  }, [certificates, user, myApplications]);
 
   const inReviewCount = myApplications.filter(a => a.status === 'Under Review' || a.status === 'Application Submitted').length;
   const returnedCount = myApplications.filter(a => a.status === 'Returned for Correction').length;
   const scheduledCount = myApplications.filter(a => a.status === 'Verification Scheduled').length;
   const activeCertsCount = myCertificates.filter(c => getRemainingDays(c.expiryDate) > 0).length;
+
+  const myExpirySummary = React.useMemo(() => {
+    const expired = [];
+    const urgent = [];
+    const warning = [];
+    const reminder = [];
+    myCertificates.forEach(cert => {
+      const days = getRemainingDays(cert.expiryDate);
+      if (days < 0) expired.push(cert);
+      else if (days <= 7) urgent.push(cert);
+      else if (days <= 15) warning.push(cert);
+      else if (days <= 30) reminder.push(cert);
+    });
+    return {
+      expired,
+      urgent,
+      warning,
+      reminder,
+      totalActionRequired: expired.length + urgent.length
+    };
+  }, [myCertificates]);
 
   return (
     <div className="space-y-6">
@@ -75,7 +116,7 @@ export default function ConsumerDashboard() {
       </div>
 
       {/* 2. Dynamic Expiry Alert System Banners */}
-      <ExpiryAlertBanner />
+      <ExpiryAlertBanner certs={myCertificates} />
 
       {/* 3. Metric KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -89,7 +130,7 @@ export default function ConsumerDashboard() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">{myApplications.length}</span>
-            <span className="text-xs text-slate-500">across 2025-2026</span>
+            <span className="text-xs text-slate-500">filed by your firm</span>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
             <span>Scheduled: <strong className="text-teal-700 font-bold">{scheduledCount}</strong></span>
@@ -141,25 +182,25 @@ export default function ConsumerDashboard() {
 
         {/* Card 4 */}
         <div className={`p-5 rounded-2xl border shadow-card transition-all ${
-          certificateExpirySummary.totalActionRequired > 0 ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-200'
+          myExpirySummary.totalActionRequired > 0 ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-200'
         }`}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Expiring / Overdue</span>
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-              certificateExpirySummary.totalActionRequired > 0 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'
+              myExpirySummary.totalActionRequired > 0 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'
             }`}>
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className={`text-2xl font-extrabold ${certificateExpirySummary.totalActionRequired > 0 ? 'text-rose-700' : 'text-slate-900'}`}>
-              {certificateExpirySummary.totalActionRequired}
+            <span className={`text-2xl font-extrabold ${myExpirySummary.totalActionRequired > 0 ? 'text-rose-700' : 'text-slate-900'}`}>
+              {myExpirySummary.totalActionRequired}
             </span>
             <span className="text-xs text-slate-500">Instruments</span>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between text-[11px]">
             <span className="text-rose-700 font-bold">
-              {certificateExpirySummary.urgent.length} urgent • {certificateExpirySummary.expired.length} expired
+              {myExpirySummary.urgent.length} urgent • {myExpirySummary.expired.length} expired
             </span>
             <Link to="/notifications" className="text-rose-700 hover:underline font-bold">Resolve →</Link>
           </div>
@@ -181,7 +222,26 @@ export default function ConsumerDashboard() {
           </div>
 
           <div className="space-y-3">
-            {myApplications.slice(0, 4).map((app) => (
+            {myApplications.length === 0 ? (
+              <div className="text-center py-10 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 space-y-2">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center">
+                  <Files className="w-6 h-6" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800">No Applications Lodged Yet</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  You haven't submitted any verification applications for your establishment yet. Lodge your first weighing or measuring instrument application to begin statutory verification.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    to="/applications/new"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  >
+                    <FilePlus2 className="w-4 h-4" /> Apply for Verification
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              myApplications.slice(0, 4).map((app) => (
               <div 
                 key={app.id} 
                 className="p-4 rounded-xl border border-slate-200/80 hover:border-teal-300 bg-slate-50/50 hover:bg-white transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
@@ -225,7 +285,7 @@ export default function ConsumerDashboard() {
                   </Link>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
 
@@ -243,7 +303,16 @@ export default function ConsumerDashboard() {
             </div>
 
             <div className="space-y-3">
-              {myCertificates.slice(0, 3).map((cert) => {
+              {myCertificates.length === 0 ? (
+                <div className="text-center py-8 px-3 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 space-y-1.5">
+                  <Award className="w-8 h-8 text-slate-300 mx-auto" />
+                  <h5 className="text-xs font-bold text-slate-700">No Certificates Issued Yet</h5>
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                    Official digital certificates with QR verification will appear here once an inspection is completed and approved.
+                  </p>
+                </div>
+              ) : (
+                myCertificates.slice(0, 3).map((cert) => {
                 const days = getRemainingDays(cert.expiryDate);
                 const isOverdue = days < 0;
                 const isCritical = days <= 7;
@@ -278,7 +347,7 @@ export default function ConsumerDashboard() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           </div>
 

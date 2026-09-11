@@ -6,9 +6,11 @@ const API_BASE_URL = window.location.port === '5173'
 
 export const api = {
   // Applications
-  getApplications: async () => {
+  getApplications: async (params = {}) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/applications/`);
+      const query = new URLSearchParams(params).toString();
+      const url = `${API_BASE_URL}/applications/${query ? `?${query}` : ''}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch applications');
       const data = await res.json();
       return data.results || data;
@@ -120,9 +122,11 @@ export const api = {
   },
 
   // Certificates
-  getCertificates: async () => {
+  getCertificates: async (params = {}) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/certificates/`);
+      const query = new URLSearchParams(params).toString();
+      const url = `${API_BASE_URL}/certificates/${query ? `?${query}` : ''}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch certificates');
       const data = await res.json();
       return data.results || data;

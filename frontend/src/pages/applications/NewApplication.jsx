@@ -55,15 +55,16 @@ export default function NewApplication() {
   // Form State
   const [formData, setFormData] = useState({
     // Step 1: Establishment
-    applicantName: user?.name || 'prakash',
-    businessName: user?.organization || 'Prakash Industrial & Trade Enterprises',
-    gstin: user?.gstin || '32AABCP9871F1Z2',
-    email: user?.email || 'prakash01.aleti@gmail.com',
-    phone: user?.phone || '+91 98470 12345',
-    address: user?.address || 'Plot 14-B, Industrial Development Area, Kalamassery',
-    district: user?.district || 'Ernakulam',
+    applicantName: user?.name || '',
+    businessName: user?.organization || user?.businessName || '',
+    gstin: user?.gstin || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    district: user?.district || '',
     state: user?.state || 'Kerala',
-    pincode: '683109',
+    pincode: user?.pincode || '',
+    applicantUid: user?.id || '',
 
     // Step 2: Instrument Specs
     instrumentCategory: 'Electronic Weighing Scales',
@@ -84,6 +85,24 @@ export default function NewApplication() {
     feeAmount: 850,
     declarationAccepted: true
   });
+
+  // Sync establishment details whenever user profile loads
+  React.useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        applicantName: prev.applicantName || user.name || '',
+        businessName: prev.businessName || user.organization || user.businessName || '',
+        gstin: prev.gstin || user.gstin || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || user.phone || '',
+        address: prev.address || user.address || '',
+        district: prev.district || user.district || '',
+        state: prev.state || user.state || 'Kerala',
+        applicantUid: user.id || prev.applicantUid || '',
+      }));
+    }
+  }, [user]);
 
   // Handle instrument category change to auto-suggest classes and fee
   const handleCategoryChange = (e) => {
@@ -232,7 +251,15 @@ export default function NewApplication() {
       return;
     }
 
-    const created = submitApplication(formData);
+    const payload = {
+      ...formData,
+      applicantUid: user?.id || formData.applicantUid || '',
+      applicantEmail: user?.email || formData.email || '',
+      applicantName: formData.applicantName || user?.name || '',
+      businessName: formData.businessName || user?.businessName || user?.organization || ''
+    };
+
+    const created = submitApplication(payload);
 
     // Trigger celebratory confetti for prototype satisfaction
     try {

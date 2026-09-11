@@ -12,15 +12,54 @@ import {
   ShieldAlert,
   BellRing
 } from 'lucide-react';
+import { useAuth, ROLES } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { getRemainingDays } from '../services/storage';
+import { getRemainingDays, getExpiryAlertInfo } from '../services/storage';
 
-export default function ExpiryAlertBanner() {
-  const { certificateExpirySummary } = useApp();
+export default function ExpiryAlertBanner({ certs = null }) {
+  const { currentRole, user } = useAuth();
+  const { certificateExpirySummary, certificates = [] } = useApp();
   const [dismissed, setDismissed] = useState(false);
   const navigate = useNavigate();
 
-  const { urgent, warning, reminder, expired } = certificateExpirySummary;
+  const activeSummary = React.useMemo(() => {
+    let sourceCerts = certs;
+    if (!sourceCerts && currentRole === ROLES.CONSUMER) {
+      if (!user) return { urgent: [], warning: [], reminder: [], expired: [], totalActionRequired: 0, allExpiringSoon: [] };
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      sourceCerts = certificates.filter((c) => {
+        const emailMatch = userClean && c.applicantEmail && c.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && c.applicantName && c.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && c.applicantUid && String(c.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+    }
+
+    if (sourceCerts) {
+      const urgent = [], warning = [], reminder = [], expired = [], valid = [];
+      sourceCerts.forEach((cert) => {
+        const info = getExpiryAlertInfo(cert.expiryDate);
+        const enriched = { ...cert, expiryInfo: info };
+        if (info.severity === 'expired') expired.push(enriched);
+        else if (info.severity === 'urgent') urgent.push(enriched);
+        else if (info.severity === 'warning') warning.push(enriched);
+        else if (info.severity === 'reminder') reminder.push(enriched);
+        else valid.push(enriched);
+      });
+      return {
+        urgent, warning, reminder, expired, valid,
+        totalActionRequired: urgent.length + warning.length + expired.length,
+        allExpiringSoon: [...expired, ...urgent, ...warning, ...reminder]
+      };
+    }
+
+    return certificateExpirySummary;
+  }, [certs, currentRole, user, certificates, certificateExpirySummary]);
+
+  const { urgent, warning, reminder, expired } = activeSummary;
   const hasAlerts = urgent.length > 0 || warning.length > 0 || expired.length > 0 || reminder.length > 0;
 
   if (dismissed || !hasAlerts) return null;

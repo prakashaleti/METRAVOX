@@ -16,6 +16,7 @@ const generateAppId = () =>
 export const DEFAULT_APPLICATIONS = [
   {
     id: 'MV-2026-0941',
+    applicantUid: 'usr-prakash',
     applicantName: 'prakash',
     applicantEmail: 'prakash01.aleti@gmail.com',
     businessName: 'Prakash Industrial & Trade Enterprises',
@@ -52,6 +53,7 @@ export const DEFAULT_APPLICATIONS = [
   },
   {
     id: 'MV-2026-0819',
+    applicantUid: 'usr-prakash',
     applicantName: 'prakash',
     applicantEmail: 'prakash01.aleti@gmail.com',
     businessName: 'Prakash Industrial & Trade Enterprises',
@@ -90,6 +92,7 @@ export const DEFAULT_APPLICATIONS = [
   },
   {
     id: 'MV-2026-0655',
+    applicantUid: 'usr-prakash',
     applicantName: 'prakash',
     applicantEmail: 'prakash01.aleti@gmail.com',
     businessName: 'Prakash Industrial & Trade Enterprises',
@@ -129,6 +132,8 @@ export const DEFAULT_CERTIFICATES = [
     id: 'cert-001',
     certificateNumber: 'KL-ERN-2026-004128',
     applicationId: 'MV-2026-0819',
+    applicantUid: 'usr-prakash',
+    applicantEmail: 'prakash01.aleti@gmail.com',
     applicantName: 'prakash',
     businessName: 'Prakash Industrial & Trade Enterprises',
     gstin: '32AABCP9871F1Z2',
@@ -245,9 +250,18 @@ export function AppProvider({ children }) {
     const appId = generateAppId();
     const now = new Date();
 
+    const userEmail = (formData.email || formData.applicantEmail || '').trim().toLowerCase();
+    const userName = formData.applicantName || formData.name || 'Registered Applicant';
+    const userBusiness = formData.businessName || formData.organization || 'Commercial Establishment';
+    const userUid = formData.applicantUid || formData.uid || '';
+
     const appPayload = {
       ...formData,
       id: appId,
+      applicantEmail: userEmail,
+      applicantName: userName,
+      businessName: userBusiness,
+      applicantUid: userUid,
       status: 'Application Submitted',
       submittedAt: now.toISOString().split('T')[0],
       feeStatus: 'Paid (Online - METRAPAY)',

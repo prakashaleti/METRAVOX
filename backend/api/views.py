@@ -26,6 +26,16 @@ class VerificationApplicationViewSet(viewsets.ModelViewSet):
     queryset = VerificationApplication.objects.all().order_by('-submitted_at')
     serializer_class = VerificationApplicationSerializer
 
+    def get_queryset(self):
+        qs = VerificationApplication.objects.all().order_by('-submitted_at')
+        email = self.request.query_params.get('email')
+        applicant_id = self.request.query_params.get('applicant_id')
+        if email:
+            qs = qs.filter(email__iexact=email.strip())
+        elif applicant_id:
+            qs = qs.filter(applicant_id=applicant_id)
+        return qs
+
     def get_object(self):
         lookup = self.kwargs.get('pk')
         try:
@@ -37,10 +47,15 @@ class VerificationApplicationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         app_id = f"MV-{timezone.now().year}-{uuid.uuid4().hex[:4].upper()}"
+        email = self.request.data.get('email')
+        applicant_profile = None
+        if email:
+            applicant_profile = ApplicantProfile.objects.filter(email__iexact=email.strip()).first()
         app = serializer.save(
             application_id=app_id, 
             status=ApplicationStatus.SUBMITTED,
-            submitted_at=timezone.now()
+            submitted_at=timezone.now(),
+            applicant=applicant_profile
         )
         ApplicationTimelineEvent.objects.create(
             application=app,
@@ -193,6 +208,13 @@ class VerificationApplicationViewSet(viewsets.ModelViewSet):
 class DigitalCertificateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DigitalCertificate.objects.all().order_by('-verification_date')
     serializer_class = DigitalCertificateSerializer
+
+    def get_queryset(self):
+        qs = DigitalCertificate.objects.all().order_by('-verification_date')
+        email = self.request.query_params.get('email')
+        if email:
+            qs = qs.filter(application__email__iexact=email.strip())
+        return qs
 
     def get_object(self):
         lookup = self.kwargs.get('pk')

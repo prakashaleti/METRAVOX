@@ -13,18 +13,37 @@ import {
   AlertTriangle,
   Clock
 } from 'lucide-react';
+import { useAuth, ROLES } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { getRemainingDays, getExpiryAlertInfo } from '../../services/storage';
 import QrVerificationModal from '../../components/modals/QrVerificationModal';
 
 export default function CertificatesList() {
-  const { certificates } = useApp();
+  const { currentRole, user } = useAuth();
+  const { certificates = [] } = useApp();
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeQrCert, setActiveQrCert] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
 
-  const filteredCerts = certificates.filter((cert) => {
+  const scopedCerts = React.useMemo(() => {
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return [];
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      return certificates.filter((c) => {
+        const emailMatch = userClean && c.applicantEmail && c.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && c.applicantName && c.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && c.applicantUid && String(c.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+    }
+    return certificates;
+  }, [certificates, currentRole, user]);
+
+  const filteredCerts = scopedCerts.filter((cert) => {
     if (!cert) return false;
     const days = getRemainingDays(cert.expiryDate);
     const query = (searchQuery || '').trim().toLowerCase();
@@ -91,7 +110,7 @@ export default function CertificatesList() {
         {/* Filter Pills */}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
           {[
-            { id: 'all', label: `All (${certificates.length})` },
+            { id: 'all', label: `All (${scopedCerts.length})` },
             { id: 'active', label: 'Valid & Certified' },
             { id: 'expiring', label: 'Expiring Soon (<= 30d)' },
             { id: 'expired', label: 'Expired' },

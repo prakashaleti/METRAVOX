@@ -18,16 +18,50 @@ import {
 } from 'lucide-react';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { getExpiryAlertInfo } from '../services/storage';
 
 export default function Navbar({ onToggleSidebar }) {
   const { currentRole, user, logout, isAuthenticated } = useAuth();
-  const { certificateExpirySummary, applications } = useApp();
+  const { certificateExpirySummary, certificates = [], applications = [] } = useApp();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const totalAlerts = certificateExpirySummary.totalActionRequired;
+  const activeExpiry = React.useMemo(() => {
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return { urgent: [], warning: [], reminder: [], expired: [], valid: [], totalActionRequired: 0 };
+      const userClean = (user.email || '').trim().toLowerCase();
+      const userNameClean = (user.name || '').trim().toLowerCase();
+      const userIdClean = user.id ? String(user.id) : null;
+
+      const userCerts = (certificates || []).filter((c) => {
+        const emailMatch = userClean && c.applicantEmail && c.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && c.applicantName && c.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && c.applicantUid && String(c.applicantUid) === userIdClean;
+        return emailMatch || nameMatch || uidMatch;
+      });
+
+      const urgent = [], warning = [], reminder = [], expired = [], valid = [];
+      userCerts.forEach((cert) => {
+        const info = getExpiryAlertInfo(cert.expiryDate);
+        const enriched = { ...cert, expiryInfo: info };
+        if (info.severity === 'expired') expired.push(enriched);
+        else if (info.severity === 'urgent') urgent.push(enriched);
+        else if (info.severity === 'warning') warning.push(enriched);
+        else if (info.severity === 'reminder') reminder.push(enriched);
+        else valid.push(enriched);
+      });
+      return {
+        urgent, warning, reminder, expired, valid,
+        totalActionRequired: urgent.length + warning.length + expired.length,
+        allExpiringSoon: [...expired, ...urgent, ...warning, ...reminder]
+      };
+    }
+    return certificateExpirySummary;
+  }, [certificates, currentRole, user, certificateExpirySummary]);
+
+  const totalAlerts = activeExpiry.totalActionRequired;
 
   const handleLogout = () => {
     setProfileMenuOpen(false);
@@ -129,7 +163,7 @@ export default function Navbar({ onToggleSidebar }) {
                   </div>
 
                   <div className="py-2 space-y-2 max-h-72 overflow-y-auto">
-                    {certificateExpirySummary.expired.map((c) => (
+                    {activeExpiry.expired.map((c) => (
                       <Link
                         key={c.certificateNumber}
                         to={`/certificates/${c.certificateNumber}`}
@@ -144,7 +178,7 @@ export default function Navbar({ onToggleSidebar }) {
                       </Link>
                     ))}
 
-                    {certificateExpirySummary.urgent.map((c) => (
+                    {activeExpiry.urgent.map((c) => (
                       <Link
                         key={c.certificateNumber}
                         to={`/certificates/${c.certificateNumber}`}
@@ -152,14 +186,14 @@ export default function Navbar({ onToggleSidebar }) {
                         className="block p-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-colors"
                       >
                         <div className="flex items-center justify-between text-xs font-bold text-orange-900 mb-0.5">
-                          <span>Expiring in {c.expiryInfo.remainingDays} days</span>
+                          <span>Expiring in {c.expiryInfo?.remainingDays ?? ''} days</span>
                           <span className="font-mono text-[10px]">Urgent</span>
                         </div>
                         <p className="text-[11px] text-orange-700 line-clamp-1">{c.instrumentType} ({c.modelNumber})</p>
                       </Link>
                     ))}
 
-                    {certificateExpirySummary.warning.map((c) => (
+                    {activeExpiry.warning.map((c) => (
                       <Link
                         key={c.certificateNumber}
                         to={`/certificates/${c.certificateNumber}`}

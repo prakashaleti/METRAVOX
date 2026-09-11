@@ -46,16 +46,18 @@ export default function VerificationHistory() {
 
   // Role-scoped records
   const scopedApps = React.useMemo(() => {
-    if (currentRole === ROLES.CONSUMER && user?.email) {
-      const userClean = user.email.trim().toLowerCase();
+    if (currentRole === ROLES.CONSUMER) {
+      if (!user) return [];
+      const userClean = (user.email || '').trim().toLowerCase();
       const userNameClean = (user.name || '').trim().toLowerCase();
-      const matched = applications.filter((a) => {
-        const emailMatch = a.applicantEmail && a.applicantEmail.trim().toLowerCase() === userClean;
-        const nameMatch = a.applicantName && a.applicantName.trim().toLowerCase() === userNameClean;
-        const uidMatch = a.applicantUid && user.id && a.applicantUid === user.id;
+      const userIdClean = user.id ? String(user.id) : null;
+
+      return applications.filter((a) => {
+        const emailMatch = userClean && a.applicantEmail && a.applicantEmail.trim().toLowerCase() === userClean;
+        const nameMatch = userNameClean && a.applicantName && a.applicantName.trim().toLowerCase() === userNameClean;
+        const uidMatch = userIdClean && a.applicantUid && String(a.applicantUid) === userIdClean;
         return emailMatch || nameMatch || uidMatch;
       });
-      return matched.length > 0 ? matched : applications;
     }
     return applications;
   }, [applications, currentRole, user]);
