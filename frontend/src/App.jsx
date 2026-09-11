@@ -19,6 +19,7 @@ import ApplicationTracking from './pages/applications/ApplicationTracking';
 import CertificatesList from './pages/certificates/CertificatesList';
 import CertificateDetail from './pages/certificates/CertificateDetail';
 import VerifyCertificate from './pages/public/VerifyCertificate';
+import ScanQrPage from './pages/public/ScanQrPage';
 import VerificationHistory from './pages/history/VerificationHistory';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
@@ -36,6 +37,8 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/scan" element={<ScanQrPage />} />
+              <Route path="/verify" element={<ScanQrPage />} />
               <Route path="/verify/:certNumber" element={<VerifyCertificate />} />
 
               {/* Role Dashboards */}

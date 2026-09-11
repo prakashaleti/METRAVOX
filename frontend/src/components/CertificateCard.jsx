@@ -21,7 +21,7 @@ export default function CertificateCard({ certificate, onVerifyClick, onPrintCli
   useEffect(() => {
     if (!certificate) return;
     // Generate QR code data URL pointing to verification link
-    const verificationUrl = `${window.location.origin}/verify/${certificate.certificateNumber}`;
+    const verificationUrl = `${window.location.origin}/#/verify/${encodeURIComponent(certificate.certificateNumber)}`;
     QRCode.toDataURL(verificationUrl, {
       width: 160,
       margin: 1,

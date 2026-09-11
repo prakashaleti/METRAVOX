@@ -14,7 +14,8 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
-  FileCheck2
+  FileCheck2,
+  QrCode
 } from 'lucide-react';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -125,6 +126,16 @@ export default function Navbar({ onToggleSidebar }) {
 
           {/* Quick Actions & Role Switcher */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Mobile / Camera QR Scanner Link */}
+            <Link
+              to="/scan"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all border border-teal-200 shadow-sm"
+              title="Scan Instrument QR Code"
+            >
+              <QrCode className="w-4 h-4 text-teal-700" />
+              <span className="hidden sm:inline">Scan QR</span>
+            </Link>
+
             {/* Quick Public Verification Link */}
             <Link
               to="/track"

@@ -16,7 +16,8 @@ import {
   TrendingUp,
   FileCheck2,
   Lock,
-  Layers
+  Layers,
+  Camera
 } from 'lucide-react';
 import { useAuth, ROLES } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -107,6 +108,13 @@ export default function LandingPage() {
 
           {/* Quick Role Portal Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-6">
+            <Link
+              to="/scan"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
+            >
+              <Camera className="w-4 h-4 animate-pulse" />
+              Scan QR Sticker on Mobile
+            </Link>
             <Link
               to="/login?role=consumer"
               className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-teal-900/40 transition-all flex items-center gap-2"

@@ -98,6 +98,13 @@ export default function ConsumerDashboard() {
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <Link
+              to="/scan"
+              className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+            >
+              <QrCode className="w-4 h-4" />
+              Scan QR / Certificate
+            </Link>
+            <Link
               to="/applications/new"
               className="px-4 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
             >
