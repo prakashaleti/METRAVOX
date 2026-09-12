@@ -39,7 +39,7 @@ export default function RecordInspectionModal({ application, isOpen, onClose, on
     if (decision === 'approve') {
       onApprove(application.id, {
         inspectionDate: new Date().toISOString().split('T')[0],
-        inspector: 'Inspector S. Venkataraman',
+        inspector: 'Ramesh varma',
         inspectorDesignation: 'Senior Legal Metrology Officer',
         testStandardUsed: testStandard,
         sealNumber: sealNumber,

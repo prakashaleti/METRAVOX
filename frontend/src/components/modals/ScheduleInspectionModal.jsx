@@ -9,7 +9,7 @@ export default function ScheduleInspectionModal({ application, isOpen, onClose, 
   const [date, setDate] = useState(defaultDate);
   const [slot, setSlot] = useState('10:30 AM - 12:30 PM');
   const [venue, setVenue] = useState(application?.inspectionVenue || 'Trader Premises (On-site)');
-  const [officer, setOfficer] = useState('S. Venkataraman (Senior LMO)');
+  const [officer, setOfficer] = useState('Ramesh varma (Senior Legal Metrology Officer)');
   const [instructions, setInstructions] = useState('Ensure instrument is placed on stable, vibration-free platform. Working standard test weights will be dispatched by mobile testing squad.');
 
   if (!isOpen || !application) return null;
@@ -105,9 +105,9 @@ export default function ScheduleInspectionModal({ application, isOpen, onClose, 
               onChange={(e) => setOfficer(e.target.value)}
               className="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white"
             >
-              <option value="S. Venkataraman (Senior LMO)">S. Venkataraman (Senior Legal Metrology Officer)</option>
-              <option value="K. R. Nambiar (LMO)">K. R. Nambiar (Legal Metrology Officer)</option>
-              <option value="M. Thomas (Inspector Weights & Measures)">M. Thomas (Inspector Weights & Measures)</option>
+              <option value="Ramesh varma (Senior Legal Metrology Officer)">Ramesh varma (Senior Legal Metrology Officer)</option>
+              <option value="Ramesh varma (Senior LMO)">Ramesh varma (Senior LMO)</option>
+              <option value="Ramesh varma (Inspector Weights & Measures)">Ramesh varma (Inspector Weights & Measures)</option>
             </select>
           </div>
 

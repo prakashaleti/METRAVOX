@@ -99,6 +99,12 @@ export default function QrVerificationModal({ certificate, isOpen, onClose }) {
               <span className="text-slate-500">Verification Date:</span>
               <span className="text-slate-900">{certificate.verificationDate}</span>
             </div>
+            <div className="flex justify-between py-1 border-b border-slate-200">
+              <span className="text-slate-500">Verifying Officer:</span>
+              <span className="font-bold text-slate-900">
+                {certificate.verifyingOfficer || certificate.issuingOfficer || 'Ramesh varma'} ({certificate.officerDesignation || 'Senior Legal Metrology Officer'})
+              </span>
+            </div>
             <div className="flex justify-between py-1">
               <span className="text-slate-500">Validity Expiry:</span>
               <span className={`font-bold ${isValid ? 'text-emerald-700' : 'text-rose-600'}`}>
@@ -119,7 +125,7 @@ export default function QrVerificationModal({ certificate, isOpen, onClose }) {
         {/* Actions */}
         <div className="bg-slate-100 px-6 py-4 flex items-center justify-between border-t border-slate-200">
           <span className="text-[11px] text-slate-500">
-            Certified by {certificate.issuingAuthority}
+            Certified by {certificate.verifyingOfficer || certificate.issuingOfficer || 'Ramesh varma'} • {certificate.officerDesignation || 'Senior Legal Metrology Officer'}
           </span>
           <button
             onClick={onClose}

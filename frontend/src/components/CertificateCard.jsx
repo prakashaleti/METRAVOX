@@ -236,10 +236,10 @@ export default function CertificateCard({ certificate, onVerifyClick, onPrintCli
           {/* Digital Signature */}
           <div className="text-right sm:text-right text-xs">
             <div className="inline-block border-b-2 border-slate-800 pb-1 mb-1 font-serif italic text-sm text-slate-900 font-bold">
-              {certificate.verifyingOfficer}
+              {certificate.verifyingOfficer || certificate.issuingOfficer || 'Ramesh varma'}
             </div>
-            <p className="font-bold text-slate-900 text-xs">{certificate.officerDesignation}</p>
-            <p className="text-[11px] text-slate-600">{certificate.issuingAuthority}</p>
+            <p className="font-bold text-slate-900 text-xs">{certificate.officerDesignation || 'Senior Legal Metrology Officer'}</p>
+            <p className="text-[11px] text-slate-600">{certificate.issuingAuthority || 'Office of the Assistant Controller of Legal Metrology'}</p>
             <p className="text-[10px] text-slate-500 font-mono mt-1">
               Digitally Signed on {certificate.verificationDate}
             </p>

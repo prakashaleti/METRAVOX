@@ -225,7 +225,7 @@ export default function VerifyCertificate() {
             </h2>
             <p className="text-xs text-white/80 mt-0.5">
               {isValid
-                ? `Officially tested & sealed under Legal Metrology Act, 2009. Valid until ${loadedCert.expiryDate} (${days} days remaining).`
+                ? `Officially tested & verified by ${loadedCert.verifyingOfficer || loadedCert.issuingOfficer || 'Ramesh varma'} (${loadedCert.officerDesignation || 'Senior Legal Metrology Officer'}) under Legal Metrology Act, 2009. Valid until ${loadedCert.expiryDate} (${days} days remaining).`
                 : `Verification validity expired ${Math.abs(days)} days ago on ${loadedCert.expiryDate}. Immediate re-verification required.`}
             </p>
           </div>
